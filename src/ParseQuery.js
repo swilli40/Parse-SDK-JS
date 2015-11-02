@@ -283,6 +283,49 @@ export default class ParseQuery {
       });
     })._thenRunCallbacks(options);
   }
+  
+  
+  /**
+ * Retrieves a JSON result that satisfies this query.
+ * Either options.success or options.error is called when the find
+ * completes.
+ *
+ * @method find2
+ * @param {Object} options A Backbone-style options object. Valid options
+ * are:<ul>
+ *   <li>success: Function to call when the find completes successfully.
+ *   <li>error: Function to call when the find fails.
+ *   <li>useMasterKey: In Cloud Code and Node only, causes the Master Key to
+ *     be used for this request.
+ *   <li>sessionToken: A valid session token, used for making a request on
+ *       behalf of a specific user.
+ * </ul>
+ *
+ * @return {Parse.Promise} A promise that is resolved with the results when
+ * the query completes.
+ */
+find2(options?: FullOptions): ParsePromise {
+  options = options || {};
+
+  var findOptions = {};
+  if (options.hasOwnProperty('useMasterKey')) {
+    findOptions.useMasterKey = options.useMasterKey;
+  }
+  if (options.hasOwnProperty('sessionToken')) {
+    findOptions.sessionToken = options.sessionToken;
+  }
+
+  var controller = CoreManager.getQueryController();
+
+  return controller.find(
+          this.className,
+          this.toJSON(),
+          findOptions
+      ).then((response) => {
+        return response.results;
+})._thenRunCallbacks(options);
+}
+
 
   /**
    * Counts the number of objects that match this query.
@@ -378,6 +421,56 @@ export default class ParseQuery {
       return ParseObject.fromJSON(objects[0]);
     })._thenRunCallbacks(options);
   }
+  
+  /**
+ * Retrieves at most one JSON result that satisfies this query.
+ *
+ * Either options.success or options.error is called when it completes.
+ * success is passed the object if there is one. otherwise, undefined.
+ *
+ * @method first2
+ * @param {Object} options A Backbone-style options object. Valid options
+ * are:<ul>
+ *   <li>success: Function to call when the find completes successfully.
+ *   <li>error: Function to call when the find fails.
+ *   <li>useMasterKey: In Cloud Code and Node only, causes the Master Key to
+ *     be used for this request.
+ *   <li>sessionToken: A valid session token, used for making a request on
+ *       behalf of a specific user.
+ * </ul>
+ *
+ * @return {Parse.Promise} A promise that is resolved with the object when
+ * the query completes.
+ */
+first2(options?: FullOptions): ParsePromise {
+  options = options || {};
+
+  var findOptions = {};
+  if (options.hasOwnProperty('useMasterKey')) {
+    findOptions.useMasterKey = options.useMasterKey;
+  }
+  if (options.hasOwnProperty('sessionToken')) {
+    findOptions.sessionToken = options.sessionToken;
+  }
+
+  var controller = CoreManager.getQueryController();
+
+  var params = this.toJSON();
+  params.limit = 1;
+
+  return controller.find(
+          this.className,
+          params,
+          findOptions
+      ).then((response) => {
+        var objects = response.results;
+  if (!objects[0]) {
+    return undefined;
+  }
+  return objects[0];
+})._thenRunCallbacks(options);
+}
+
 
   /**
    * Iterates over each result of a query, calling a callback for each one. If
